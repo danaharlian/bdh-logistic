@@ -1,0 +1,185 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum WarehouseType {
+  MANAJEMEN
+  GIZI
+  SANITASI
+}
+
+enum RoleType {
+  STAF_RUANGAN
+  STAF_PENGADAAN
+  ADMIN_GUDANG
+  SUPER_ADMIN
+}
+
+enum PermissionModule {
+  DASHBOARD
+  WAREHOUSE
+  ITEM
+  CATEGORY
+  REQUEST
+  PROCUREMENT
+  STOCK_MOVEMENT
+  REPORT
+  USER_MANAGEMENT
+  ROLE_MANAGEMENT
+  SETTINGS
+  APPROVAL
+}
+
+enum PermissionAction {
+  VIEW
+  CREATE
+  UPDATE
+  DELETE
+  APPROVE
+  REJECT
+  EXPORT
+  IMPORT
+}
+
+model User {
+  id                 String              @id @default(cuid())
+  name               String
+  email              String
+  emailVerified      Boolean             @default(false)
+  image              String?
+  isActive           Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  sessions           Session[]
+  accounts           Account[]
+  userWarehouseRoles UserWarehouseRole[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+model Role {
+  id                 String              @id @default(uuid())
+  name               String
+  roleType           RoleType
+  description        String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  userWarehouseRoles UserWarehouseRole[]
+  rolePermissions    RolePermission[]
+
+  @@unique([name])
+  @@map("roles")
+}
+
+model Permission {
+  id              String           @id @default(uuid())
+  name            String           @unique
+  module          PermissionModule
+  action          PermissionAction
+  description     String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  rolePermissions RolePermission[]
+
+  @@unique([module, action])
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String     @id @default(uuid())
+  roleId       String
+  permissionId String
+  warehouseId  String?
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  warehouse    Warehouse? @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId, warehouseId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+model UserWarehouseRole {
+  id          String    @id @default(uuid())
+  userId      String
+  warehouseId String
+  roleId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  role        Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, warehouseId, roleId])
+  @@index([userId])
+  @@index([warehouseId])
+  @@map("user_warehouse_roles")
+}
+
+model Warehouse {
+  id                 String              @id @default(uuid())
+  code               String
+  name               String
+  type               WarehouseType
+  isActive           Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  userWarehouseRoles UserWarehouseRole[]
+  rolePermissions    RolePermission[]
+
+  @@unique([code])
+  @@map("warehouses")
+}

@@ -5,13 +5,69 @@ CREATE TYPE "WarehouseType" AS ENUM ('MANAJEMEN', 'GIZI', 'SANITASI');
 CREATE TYPE "RoleType" AS ENUM ('STAF_RUANGAN', 'STAF_PENGADAAN', 'ADMIN_GUDANG', 'SUPER_ADMIN');
 
 -- CreateEnum
-CREATE TYPE "PermissionModule" AS ENUM ('DASHBOARD', 'WAREHOUSE', 'ITEM', 'CATEGORY', 'REQUEST', 'PROCUREMENT', 'STOCK_MOVEMENT', 'REPORT', 'USER_MANAGEMENT', 'ROLE_MANAGEMENT', 'SETTINGS', 'APPROVAL');
+CREATE TYPE "PermissionModule" AS ENUM ('DASHBOARD', 'WAREHOUSE', 'ITEM', 'CATEGORY', 'REQUEST', 'PROCUREMENT', 'USER_MANAGEMENT', 'ROLE_MANAGEMENT', 'SETTINGS', 'APPROVAL');
 
 -- CreateEnum
-CREATE TYPE "PermissionAction" AS ENUM ('VIEW', 'CREATE', 'UPDATE', 'DELETE', 'APPROVE', 'REJECT', 'EXPORT', 'IMPORT');
+CREATE TYPE "PermissionAction" AS ENUM ('VIEW', 'CREATE', 'UPDATE', 'DELETE', 'APPROVE', 'REJECT');
 
--- AlterTable
-ALTER TABLE "user" ADD COLUMN     "isActive" BOOLEAN NOT NULL DEFAULT true;
+-- CreateTable
+CREATE TABLE "user" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "emailVerified" BOOLEAN NOT NULL DEFAULT false,
+    "image" TEXT,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "user_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "session" (
+    "id" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "token" TEXT NOT NULL,
+    "ipAddress" TEXT,
+    "userAgent" TEXT,
+    "userId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "session_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "account" (
+    "id" TEXT NOT NULL,
+    "accountId" TEXT NOT NULL,
+    "providerId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "accessToken" TEXT,
+    "refreshToken" TEXT,
+    "idToken" TEXT,
+    "accessTokenExpiresAt" TIMESTAMP(3),
+    "refreshTokenExpiresAt" TIMESTAMP(3),
+    "scope" TEXT,
+    "password" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "account_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "verification" (
+    "id" TEXT NOT NULL,
+    "identifier" TEXT NOT NULL,
+    "value" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "verification_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
 CREATE TABLE "roles" (
@@ -43,7 +99,6 @@ CREATE TABLE "role_permissions" (
     "id" TEXT NOT NULL,
     "roleId" TEXT NOT NULL,
     "permissionId" TEXT NOT NULL,
-    "warehouseId" TEXT,
 
     CONSTRAINT "role_permissions_pkey" PRIMARY KEY ("id")
 );
@@ -72,6 +127,21 @@ CREATE TABLE "warehouses" (
 );
 
 -- CreateIndex
+CREATE UNIQUE INDEX "user_email_key" ON "user"("email");
+
+-- CreateIndex
+CREATE INDEX "session_userId_idx" ON "session"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "session_token_key" ON "session"("token");
+
+-- CreateIndex
+CREATE INDEX "account_userId_idx" ON "account"("userId");
+
+-- CreateIndex
+CREATE INDEX "verification_identifier_idx" ON "verification"("identifier");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "roles_name_key" ON "roles"("name");
 
 -- CreateIndex
@@ -87,7 +157,7 @@ CREATE INDEX "role_permissions_roleId_idx" ON "role_permissions"("roleId");
 CREATE INDEX "role_permissions_permissionId_idx" ON "role_permissions"("permissionId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "role_permissions_roleId_permissionId_warehouseId_key" ON "role_permissions"("roleId", "permissionId", "warehouseId");
+CREATE UNIQUE INDEX "role_permissions_roleId_permissionId_key" ON "role_permissions"("roleId", "permissionId");
 
 -- CreateIndex
 CREATE INDEX "user_warehouse_roles_userId_idx" ON "user_warehouse_roles"("userId");
@@ -102,13 +172,16 @@ CREATE UNIQUE INDEX "user_warehouse_roles_userId_warehouseId_roleId_key" ON "use
 CREATE UNIQUE INDEX "warehouses_code_key" ON "warehouses"("code");
 
 -- AddForeignKey
+ALTER TABLE "session" ADD CONSTRAINT "session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "account" ADD CONSTRAINT "account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "role_permissions" ADD CONSTRAINT "role_permissions_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "role_permissions" ADD CONSTRAINT "role_permissions_permissionId_fkey" FOREIGN KEY ("permissionId") REFERENCES "permissions"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "role_permissions" ADD CONSTRAINT "role_permissions_warehouseId_fkey" FOREIGN KEY ("warehouseId") REFERENCES "warehouses"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "user_warehouse_roles" ADD CONSTRAINT "user_warehouse_roles_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;

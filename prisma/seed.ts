@@ -1,6 +1,5 @@
 import "dotenv/config";
-import bcrypt from "bcryptjs";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import {
   PermissionModule,
   PermissionAction,
@@ -11,43 +10,38 @@ import {
 async function main() {
   console.log("🌱 Starting seed...");
 
-  // 1. Create Warehouses
   console.log("📦 Creating warehouses...");
 
   const warehouseManajemen = await prisma.warehouse.upsert({
-    where: { code: "WH-MNG-001" },
+    where: { code: "WH-MNG" },
     update: {},
     create: {
-      code: "WH-MNG-001",
+      code: "WH-MNG",
       name: "Gudang Manajemen",
       type: WarehouseType.MANAJEMEN,
-      isActive: true,
     },
   });
 
   const warehouseGizi = await prisma.warehouse.upsert({
-    where: { code: "WH-GIZ-001" },
+    where: { code: "WH-GIZI" },
     update: {},
     create: {
-      code: "WH-GIZ-001",
+      code: "WH-GIZ",
       name: "Gudang Gizi",
       type: WarehouseType.GIZI,
-      isActive: true,
     },
   });
 
   const warehouseSanitasi = await prisma.warehouse.upsert({
-    where: { code: "WH-SAN-001" },
+    where: { code: "WH-SAN" },
     update: {},
     create: {
-      code: "WH-SAN-001",
+      code: "WH-SAN",
       name: "Gudang Sanitasi",
       type: WarehouseType.SANITASI,
-      isActive: true,
     },
   });
 
-  // 2. Create Permissions
   const permissions = [
     // Dashboard
     {
@@ -99,16 +93,6 @@ async function main() {
       module: PermissionModule.ITEM,
       action: PermissionAction.DELETE,
     },
-    {
-      name: "import_item",
-      module: PermissionModule.ITEM,
-      action: PermissionAction.IMPORT,
-    },
-    {
-      name: "export_item",
-      module: PermissionModule.ITEM,
-      action: PermissionAction.EXPORT,
-    },
 
     // Category Management
     {
@@ -132,7 +116,7 @@ async function main() {
       action: PermissionAction.DELETE,
     },
 
-    // Request Management
+    // Request
     {
       name: "view_request",
       module: PermissionModule.REQUEST,
@@ -163,13 +147,8 @@ async function main() {
       module: PermissionModule.REQUEST,
       action: PermissionAction.REJECT,
     },
-    {
-      name: "export_request",
-      module: PermissionModule.REQUEST,
-      action: PermissionAction.EXPORT,
-    },
 
-    // Procurement Management
+    // Pengadaan
     {
       name: "view_procurement",
       module: PermissionModule.PROCUREMENT,
@@ -194,50 +173,6 @@ async function main() {
       name: "approve_procurement",
       module: PermissionModule.PROCUREMENT,
       action: PermissionAction.APPROVE,
-    },
-    {
-      name: "export_procurement",
-      module: PermissionModule.PROCUREMENT,
-      action: PermissionAction.EXPORT,
-    },
-
-    // Stock Movement
-    {
-      name: "view_stock_movement",
-      module: PermissionModule.STOCK_MOVEMENT,
-      action: PermissionAction.VIEW,
-    },
-    {
-      name: "create_stock_in",
-      module: PermissionModule.STOCK_MOVEMENT,
-      action: PermissionAction.CREATE,
-    }, // Stok masuk
-    {
-      name: "create_stock_out",
-      module: PermissionModule.STOCK_MOVEMENT,
-      action: PermissionAction.UPDATE,
-    }, // Stok keluar
-    {
-      name: "create_stock_adjustment",
-      module: PermissionModule.STOCK_MOVEMENT,
-      action: PermissionAction.DELETE,
-    }, // Adjustment
-    {
-      name: "export_stock_movement",
-      module: PermissionModule.STOCK_MOVEMENT,
-      action: PermissionAction.EXPORT,
-    },
-
-    // Report
-    {
-      name: "view_report",
-      module: PermissionModule.REPORT,
-      action: PermissionAction.VIEW,
-    },
-    {
-      name: "export_report",
-      module: PermissionModule.REPORT,
-      action: PermissionAction.EXPORT,
     },
 
     // User Management
@@ -307,7 +242,6 @@ async function main() {
     });
   }
 
-  // 3. Create Roles
   console.log("🚦Creating roles...");
 
   const stafRuanganRole = await prisma.role.upsert({
@@ -350,7 +284,6 @@ async function main() {
     },
   });
 
-  // 4. Assign Permissions to Roles
   console.log("🔗 Assigning permissions to roles...");
 
   // STAF RUANGAN - Hanya bisa request barang
@@ -371,60 +304,26 @@ async function main() {
     if (permission) {
       await prisma.rolePermission.upsert({
         where: {
-          roleId_permissionId_warehouseId: {
+          roleId_permissionId: {
             roleId: stafRuanganRole.id,
             permissionId: permission.id,
-            warehouseId: warehouseManajemen.id,
           },
         },
         update: {},
         create: {
           roleId: stafRuanganRole.id,
           permissionId: permission.id,
-          warehouseId: warehouseManajemen.id,
-        },
-      });
-
-      await prisma.rolePermission.upsert({
-        where: {
-          roleId_permissionId_warehouseId: {
-            roleId: stafRuanganRole.id,
-            permissionId: permission.id,
-            warehouseId: warehouseSanitasi.id,
-          },
-        },
-        update: {},
-        create: {
-          roleId: stafRuanganRole.id,
-          permissionId: permission.id,
-          warehouseId: warehouseSanitasi.id,
-        },
-      });
-
-      await prisma.rolePermission.upsert({
-        where: {
-          roleId_permissionId_warehouseId: {
-            roleId: stafRuanganRole.id,
-            permissionId: permission.id,
-            warehouseId: warehouseGizi.id,
-          },
-        },
-        update: {},
-        create: {
-          roleId: stafRuanganRole.id,
-          permissionId: permission.id,
-          warehouseId: warehouseGizi.id,
         },
       });
     }
   }
 
-  // STAF PENGADAAN - Bisa procurement dan stok masuk (multi warehouse)
+  // STAF PENGADAAN
   const stafPengadaanPermissions = [
     "view_dashboard",
     "view_warehouse",
     "view_item",
-    "create_item", // Bisa tambah item baru
+    "create_item",
     "update_item",
     "view_category",
     "view_procurement",
@@ -432,13 +331,6 @@ async function main() {
     "update_procurement",
     "delete_procurement",
     "approve_procurement",
-    "export_procurement",
-    "view_stock_movement",
-    "create_stock_in", // HANYA STOK MASUK, tidak bisa stok keluar
-    "create_stock_adjustment",
-    "export_stock_movement",
-    "view_report",
-    "export_report",
   ];
 
   for (const permissionName of stafPengadaanPermissions) {
@@ -449,49 +341,15 @@ async function main() {
     if (permission) {
       await prisma.rolePermission.upsert({
         where: {
-          roleId_permissionId_warehouseId: {
+          roleId_permissionId: {
             roleId: stafPengadaanRole.id,
             permissionId: permission.id,
-            warehouseId: warehouseManajemen.id,
           },
         },
         update: {},
         create: {
           roleId: stafPengadaanRole.id,
           permissionId: permission.id,
-          warehouseId: warehouseManajemen.id,
-        },
-      });
-
-      await prisma.rolePermission.upsert({
-        where: {
-          roleId_permissionId_warehouseId: {
-            roleId: stafPengadaanRole.id,
-            permissionId: permission.id,
-            warehouseId: warehouseGizi.id,
-          },
-        },
-        update: {},
-        create: {
-          roleId: stafPengadaanRole.id,
-          permissionId: permission.id,
-          warehouseId: warehouseGizi.id,
-        },
-      });
-
-      await prisma.rolePermission.upsert({
-        where: {
-          roleId_permissionId_warehouseId: {
-            roleId: stafPengadaanRole.id,
-            permissionId: permission.id,
-            warehouseId: warehouseSanitasi.id,
-          },
-        },
-        update: {},
-        create: {
-          roleId: stafPengadaanRole.id,
-          permissionId: permission.id,
-          warehouseId: warehouseSanitasi.id,
         },
       });
     }
@@ -506,24 +364,14 @@ async function main() {
     "update_item",
     "delete_item",
     "import_item",
-    "export_item",
     "view_category",
     "create_category",
     "update_category",
     "delete_category",
     "view_request",
-    "approve_request", // Bisa approve/reject request
+    "approve_request",
     "reject_request",
-    "export_request",
     "view_procurement",
-    "export_procurement",
-    "view_stock_movement",
-    "create_stock_in",
-    "create_stock_out", // Bisa stok keluar untuk fulfill request
-    "create_stock_adjustment",
-    "export_stock_movement",
-    "view_report",
-    "export_report",
   ];
 
   for (const permissionName of adminGudangPermissions) {
@@ -534,49 +382,15 @@ async function main() {
     if (permission) {
       await prisma.rolePermission.upsert({
         where: {
-          roleId_permissionId_warehouseId: {
+          roleId_permissionId: {
             roleId: adminGudangRole.id,
             permissionId: permission.id,
-            warehouseId: warehouseManajemen.id,
           },
         },
         update: {},
         create: {
           roleId: adminGudangRole.id,
           permissionId: permission.id,
-          warehouseId: warehouseManajemen.id,
-        },
-      });
-
-      await prisma.rolePermission.upsert({
-        where: {
-          roleId_permissionId_warehouseId: {
-            roleId: adminGudangRole.id,
-            permissionId: permission.id,
-            warehouseId: warehouseGizi.id,
-          },
-        },
-        update: {},
-        create: {
-          roleId: adminGudangRole.id,
-          permissionId: permission.id,
-          warehouseId: warehouseGizi.id,
-        },
-      });
-
-      await prisma.rolePermission.upsert({
-        where: {
-          roleId_permissionId_warehouseId: {
-            roleId: adminGudangRole.id,
-            permissionId: permission.id,
-            warehouseId: warehouseSanitasi.id,
-          },
-        },
-        update: {},
-        create: {
-          roleId: adminGudangRole.id,
-          permissionId: permission.id,
-          warehouseId: warehouseSanitasi.id,
         },
       });
     }
@@ -587,56 +401,23 @@ async function main() {
   for (const permission of allPermissions) {
     await prisma.rolePermission.upsert({
       where: {
-        roleId_permissionId_warehouseId: {
+        roleId_permissionId: {
           roleId: superAdminRole.id,
           permissionId: permission.id,
-          warehouseId: warehouseManajemen.id,
         },
       },
       update: {},
       create: {
         roleId: superAdminRole.id,
         permissionId: permission.id,
-        warehouseId: warehouseManajemen.id,
-      },
-    });
-
-    await prisma.rolePermission.upsert({
-      where: {
-        roleId_permissionId_warehouseId: {
-          roleId: superAdminRole.id,
-          permissionId: permission.id,
-          warehouseId: warehouseGizi.id,
-        },
-      },
-      update: {},
-      create: {
-        roleId: superAdminRole.id,
-        permissionId: permission.id,
-        warehouseId: warehouseGizi.id,
-      },
-    });
-
-    await prisma.rolePermission.upsert({
-      where: {
-        roleId_permissionId_warehouseId: {
-          roleId: superAdminRole.id,
-          permissionId: permission.id,
-          warehouseId: warehouseSanitasi.id,
-        },
-      },
-      update: {},
-      create: {
-        roleId: superAdminRole.id,
-        permissionId: permission.id,
-        warehouseId: warehouseSanitasi.id,
       },
     });
   }
 
-  // 5. Create Users
   console.log("👤 Creating users...");
-  const hashedPassword = await bcrypt.hash("11111111", 10);
+
+  const hashedPassword =
+    "f42ce506f95d92242e5795b7d0b80666:a81999b1f4a5946b9aeaa477726705ec4c9a204019adbccd0a315708bd24b471122e3d33b4f505b48ff212c7cbdda2cb86f77ec2ae28a6925149e827abccb169"; // 11111111
 
   const superAdmin = await prisma.user.upsert({
     where: { email: "superadmin@bdh.com" },
@@ -644,8 +425,6 @@ async function main() {
     create: {
       name: "Super Admin",
       email: "superadmin@bdh.com",
-      emailVerified: false,
-      isActive: true,
       accounts: {
         create: {
           accountId: "superadmin",
@@ -662,8 +441,6 @@ async function main() {
     create: {
       name: "Admin Gudang Manajemen",
       email: "admin.manajemen@bdh.com",
-      emailVerified: false,
-      isActive: true,
       accounts: {
         create: {
           accountId: "admin-manajemen",
@@ -680,8 +457,6 @@ async function main() {
     create: {
       name: "Admin Gudang Gizi",
       email: "admin.gizi@bdh.com",
-      emailVerified: false,
-      isActive: true,
       accounts: {
         create: {
           accountId: "admin-gizi",
@@ -698,8 +473,6 @@ async function main() {
     create: {
       name: "Admin Gudang Sanitasi",
       email: "admin.sanitasi@bdh.com",
-      emailVerified: false,
-      isActive: true,
       accounts: {
         create: {
           accountId: "admin-sanitasi",
@@ -710,17 +483,15 @@ async function main() {
     },
   });
 
-  const stafPengadaan1 = await prisma.user.upsert({
-    where: { email: "arif@bdh.com" },
+  const stafPengadaan = await prisma.user.upsert({
+    where: { email: "staf.pengadaan@bdh.com" },
     update: {},
     create: {
-      name: "Arif",
-      email: "arif@bdh.com",
-      emailVerified: false,
-      isActive: true,
+      name: "Staf Pengadaan",
+      email: "staf.pengadaan@bdh.com",
       accounts: {
         create: {
-          accountId: "arif",
+          accountId: "staf-pengadaan",
           providerId: "credential",
           password: hashedPassword,
         },
@@ -728,53 +499,15 @@ async function main() {
     },
   });
 
-  const stafPengadaan2 = await prisma.user.upsert({
-    where: { email: "santi@bdh.com" },
+  const stafRuangan = await prisma.user.upsert({
+    where: { email: "staf.ruangan@bdh.com" },
     update: {},
     create: {
-      name: "Santi",
-      email: "santi@bdh.com",
-      emailVerified: false,
-      isActive: true,
+      name: "Staf Ruangan",
+      email: "staf.ruangan@bdh.com",
       accounts: {
         create: {
-          accountId: "santi",
-          providerId: "credential",
-          password: hashedPassword,
-        },
-      },
-    },
-  });
-
-  const stafRuangan1 = await prisma.user.upsert({
-    where: { email: "ida@bdh.com" },
-    update: {},
-    create: {
-      name: "Ida Rochmah",
-      email: "ida@bdh.com",
-      emailVerified: false,
-      isActive: true,
-      accounts: {
-        create: {
-          accountId: "ida-rochmah",
-          providerId: "credential",
-          password: hashedPassword,
-        },
-      },
-    },
-  });
-
-  const stafRuangan2 = await prisma.user.upsert({
-    where: { email: "gesti@bdh.com" },
-    update: {},
-    create: {
-      name: "Gesti",
-      email: "gesti@bdh.com",
-      emailVerified: false,
-      isActive: true,
-      accounts: {
-        create: {
-          accountId: "gesti",
+          accountId: "staf-ruangan",
           providerId: "credential",
           password: hashedPassword,
         },
@@ -784,10 +517,9 @@ async function main() {
 
   console.log("✅ Users created");
 
-  // 6. Assign Users to Warehouses with Roles
   console.log("🔗 Assigning users to warehouses...");
 
-  // Super Admin - Access to all warehouses
+  // Super Admin - Access ke semua gudang
   await prisma.userWarehouseRole.upsert({
     where: {
       userId_warehouseId_roleId: {
@@ -887,35 +619,18 @@ async function main() {
     },
   });
 
-  // Staf Pengadaan 1
+  // Staf Pengadaan
   await prisma.userWarehouseRole.upsert({
     where: {
       userId_warehouseId_roleId: {
-        userId: stafPengadaan1.id,
+        userId: stafPengadaan.id,
         warehouseId: warehouseManajemen.id,
         roleId: stafPengadaanRole.id,
       },
     },
     update: {},
     create: {
-      userId: stafPengadaan1.id,
-      warehouseId: warehouseManajemen.id,
-      roleId: stafPengadaanRole.id,
-    },
-  });
-
-  // Staf Pengadaan 2
-  await prisma.userWarehouseRole.upsert({
-    where: {
-      userId_warehouseId_roleId: {
-        userId: stafPengadaan2.id,
-        warehouseId: warehouseManajemen.id,
-        roleId: stafPengadaanRole.id,
-      },
-    },
-    update: {},
-    create: {
-      userId: stafPengadaan2.id,
+      userId: stafPengadaan.id,
       warehouseId: warehouseManajemen.id,
       roleId: stafPengadaanRole.id,
     },
@@ -924,31 +639,31 @@ async function main() {
   await prisma.userWarehouseRole.upsert({
     where: {
       userId_warehouseId_roleId: {
-        userId: stafPengadaan2.id,
+        userId: stafPengadaan.id,
         warehouseId: warehouseSanitasi.id,
         roleId: stafPengadaanRole.id,
       },
     },
     update: {},
     create: {
-      userId: stafPengadaan2.id,
+      userId: stafPengadaan.id,
       warehouseId: warehouseSanitasi.id,
       roleId: stafPengadaanRole.id,
     },
   });
 
-  // Staf Ruangan 1
+  // Staf Ruangan
   await prisma.userWarehouseRole.upsert({
     where: {
       userId_warehouseId_roleId: {
-        userId: stafRuangan1.id,
+        userId: stafRuangan.id,
         warehouseId: warehouseManajemen.id,
         roleId: stafRuanganRole.id,
       },
     },
     update: {},
     create: {
-      userId: stafRuangan1.id,
+      userId: stafRuangan.id,
       warehouseId: warehouseManajemen.id,
       roleId: stafRuanganRole.id,
     },
@@ -957,14 +672,14 @@ async function main() {
   await prisma.userWarehouseRole.upsert({
     where: {
       userId_warehouseId_roleId: {
-        userId: stafRuangan1.id,
+        userId: stafRuangan.id,
         warehouseId: warehouseGizi.id,
         roleId: stafRuanganRole.id,
       },
     },
     update: {},
     create: {
-      userId: stafRuangan1.id,
+      userId: stafRuangan.id,
       warehouseId: warehouseGizi.id,
       roleId: stafRuanganRole.id,
     },
@@ -973,87 +688,28 @@ async function main() {
   await prisma.userWarehouseRole.upsert({
     where: {
       userId_warehouseId_roleId: {
-        userId: stafRuangan1.id,
+        userId: stafRuangan.id,
         warehouseId: warehouseSanitasi.id,
         roleId: stafRuanganRole.id,
       },
     },
     update: {},
     create: {
-      userId: stafRuangan1.id,
+      userId: stafRuangan.id,
       warehouseId: warehouseSanitasi.id,
       roleId: stafRuanganRole.id,
     },
   });
 
-  // Staf Ruangan 2
-  await prisma.userWarehouseRole.upsert({
-    where: {
-      userId_warehouseId_roleId: {
-        userId: stafRuangan2.id,
-        warehouseId: warehouseManajemen.id,
-        roleId: stafRuanganRole.id,
-      },
-    },
-    update: {},
-    create: {
-      userId: stafRuangan2.id,
-      warehouseId: warehouseManajemen.id,
-      roleId: stafRuanganRole.id,
-    },
-  });
-
-  await prisma.userWarehouseRole.upsert({
-    where: {
-      userId_warehouseId_roleId: {
-        userId: stafRuangan2.id,
-        warehouseId: warehouseGizi.id,
-        roleId: stafRuanganRole.id,
-      },
-    },
-    update: {},
-    create: {
-      userId: stafRuangan2.id,
-      warehouseId: warehouseGizi.id,
-      roleId: stafRuanganRole.id,
-    },
-  });
-
-  await prisma.userWarehouseRole.upsert({
-    where: {
-      userId_warehouseId_roleId: {
-        userId: stafRuangan2.id,
-        warehouseId: warehouseSanitasi.id,
-        roleId: stafRuanganRole.id,
-      },
-    },
-    update: {},
-    create: {
-      userId: stafRuangan2.id,
-      warehouseId: warehouseSanitasi.id,
-      roleId: stafRuanganRole.id,
-    },
-  });
-
-  console.log("🎉 Seed completed successfully!");
-  // Summary
-  console.log("\n📊 Seed Summary:");
-  console.log(`- Warehouses: 3`);
-  console.log(`- Roles: 4`);
-  console.log(`- Permissions: ${permissions.length}`);
-  console.log(`- Users: 7`);
   console.log("\n🎉 Seed completed successfully!");
-
   console.log("\n🔑 Login Credentials (password untuk semua user: 11111111):");
   console.log("- superadmin@bdh.com (Super Admin - All Warehouses)");
   console.log("- admin.manajemen@bdh.com (Admin - Gudang Manajemen)");
   console.log("- admin.gizi@bdh.com (Admin - Gudang Gizi)");
-  console.log("- arif@bdh.com (Staf Pengadaan - Gudang Manajemen)");
   console.log(
-    "- santi@bdh.com (Staf Pengadaan - Gudang Manajemen & Gudang Sanitasi)"
+    "- staf.pengadaan@bdh.com (Staf Pengadaan - Gudang Manajemen & Gudang Sanitasi)"
   );
-  console.log("- gesti@bdh.com (Staf Ruangan - Semua Gudang)");
-  console.log("- ida@bdh.com (Staf Ruangan - Semua Gudang)");
+  console.log("- staf.ruangan@bdh.com (Staf Ruangan - Semua Gudang)");
 }
 
 main()

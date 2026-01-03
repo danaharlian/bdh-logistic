@@ -2,7 +2,7 @@ import { betterAuth } from "better-auth/minimal";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { customSession } from "better-auth/plugins";
 import { prisma } from "@/lib/prisma";
-import { permissionService } from "@/lib/rbac/permission-service";
+import { permissionService, permissionQueries } from "@/lib/rbac";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -10,6 +10,9 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+  },
+  advanced: {
+    cookiePrefix: "bdh-logistic",
   },
   user: {
     additionalFields: {
@@ -28,26 +31,17 @@ export const auth = betterAuth({
   },
   plugins: [
     customSession(async ({ session, user }) => {
-      const roles = await prisma.userWarehouseRole.findMany({
-        where: { userId: user.id },
-        include: {
-          warehouse: true,
-          role: {
-            include: {
-              rolePermissions: {
-                include: { permission: true },
-              },
-            },
-          },
-        },
-      });
-
+      const roles = await permissionQueries.getUserWarehouseRoles(user.id);
       const permissions = permissionService.getUserWarehousePermissions(roles);
+      const isSuperAdmin = roles.some(
+        ({ role }) => role.roleType === "SUPER_ADMIN"
+      );
 
       return {
         session,
         user: {
           ...user,
+          isSuperAdmin,
           permissions,
         },
       };

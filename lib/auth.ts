@@ -2,7 +2,7 @@ import { betterAuth } from "better-auth/minimal";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { customSession } from "better-auth/plugins";
 import { prisma } from "@/lib/prisma";
-import { permissionService, permissionQueries } from "@/lib/rbac";
+import { permissionQueries, permissionService } from "@/lib/rbac";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -12,7 +12,7 @@ export const auth = betterAuth({
     enabled: true,
   },
   advanced: {
-    cookiePrefix: "bdh-logistic",
+    cookiePrefix: "bdh_logistic",
   },
   user: {
     additionalFields: {
@@ -32,7 +32,12 @@ export const auth = betterAuth({
   plugins: [
     customSession(async ({ session, user }) => {
       const roles = await permissionQueries.getUserWarehouseRoles(user.id);
-      const permissions = permissionService.getUserWarehousePermissions(roles);
+
+      // Get permissions and warehouse roles in a single pass
+      const { permissions, warehouseRoles } =
+        permissionService.getUserWarehouseData(roles);
+
+      // Check for super admin
       const isSuperAdmin = roles.some(
         ({ role }) => role.roleType === "SUPER_ADMIN"
       );
@@ -43,9 +48,13 @@ export const auth = betterAuth({
           ...user,
           isSuperAdmin,
           permissions,
+          warehouseRoles,
         },
       };
     }),
   ],
   trustedOrigins: ["http://localhost:3000"],
 });
+
+export type SessionServer = typeof auth.$Infer.Session.session;
+export type UserSessionServer = typeof auth.$Infer.Session.user;

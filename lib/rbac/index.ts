@@ -17,6 +17,7 @@ export type {
   PermissionKey,
   PermissionMap,
   UserWarehouseRoleWithPermissions,
+  UserWarehouseData,
 } from "./types";
 
 // Services

@@ -8,3 +8,11 @@ export const getSession = cache(async () => {
     headers: headersList,
   });
 });
+
+export const getCurrentUser = async () => {
+  const session = await getSession();
+
+  if (!session?.user) return null;
+
+  return session.user;
+};

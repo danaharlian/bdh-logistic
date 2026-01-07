@@ -52,24 +52,18 @@ export const SignupForm = ({
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    const { data, error } = await signUp.email(
+    await signUp.email(
       { name: values.name, email: values.email, password: values.password },
       {
-        onRequest: (ctx) => {
-          console.log("request", ctx);
-        },
-        onSuccess: (ctx) => {
-          console.log("success", ctx);
-          router.push("/dashboard");
+        onSuccess: () => {
+          toast.success("Welcome, your account has been created!");
+          router.push("/post-login");
         },
         onError: (ctx) => {
-          console.log("error", ctx);
           toast.error(ctx.error.message);
         },
       }
     );
-
-    console.log({ data, error });
   };
 
   return (

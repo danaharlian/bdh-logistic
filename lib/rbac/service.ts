@@ -1,33 +1,43 @@
-import { PermissionMap, UserWarehouseRoleWithPermissions } from "./types";
+import {
+  PermissionMap,
+  UserWarehouseRoleWithPermissions,
+  WarehouseRoleMap,
+  UserWarehouseData,
+} from "./types";
 import { createPermissionKey } from "./utils";
 
 export const permissionService = {
   /**
-   * Transforms user warehouse roles into a permission map
+   * Transforms user warehouse roles into both permission map and warehouse role map
+   * in a single pass for optimal performance.
    * @param rows - Array of user warehouse roles with permissions
-   * @returns Permission map organized by warehouse ID
+   * @returns Object containing both permissions and warehouse roles
    */
-  getUserWarehousePermissions: (
+  getUserWarehouseData: (
     rows: UserWarehouseRoleWithPermissions[]
-  ): PermissionMap => {
-    const map: PermissionMap = {};
+  ): UserWarehouseData => {
+    const permissions: PermissionMap = {};
+    const warehouseRoles: WarehouseRoleMap = {};
 
     for (const row of rows) {
       const warehouseId = row.warehouse.id;
+      const roleType = row.role.roleType;
 
-      if (!map[warehouseId]) {
-        map[warehouseId] = {};
-      }
+      // Set warehouse role (last role wins if duplicate warehouse)
+      warehouseRoles[warehouseId] = roleType;
+
+      // Build permissions map
+      const warehousePermissions = (permissions[warehouseId] ??= {});
 
       for (const rp of row.role.rolePermissions) {
         const key = createPermissionKey(
           rp.permission.module,
           rp.permission.action
         );
-        map[warehouseId][key] = true;
+        warehousePermissions[key] = true;
       }
     }
 
-    return map;
+    return { permissions, warehouseRoles };
   },
 };

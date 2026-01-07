@@ -39,22 +39,15 @@ export const LoginForm = ({
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      const { data, error } = await signIn.email(values, {
-        onRequest: (ctx) => {
-          console.log("request", ctx);
-        },
-        onSuccess: (ctx) => {
-          console.log("success", ctx);
+      await signIn.email(values, {
+        onSuccess: () => {
           toast.success("Logged in Successfully");
-          router.push("/dashboard");
+          router.push("/post-login");
         },
         onError: (ctx) => {
-          console.log("error", ctx);
           toast.error(ctx.error.message);
         },
       });
-
-      console.log({ data, error });
     } catch (error) {
       console.log(error);
     }

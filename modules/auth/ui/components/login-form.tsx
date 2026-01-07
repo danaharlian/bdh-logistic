@@ -42,7 +42,7 @@ export const LoginForm = ({
       await signIn.email(values, {
         onSuccess: () => {
           toast.success("Logged in Successfully");
-          router.push("/post-login");
+          router.push("/");
         },
         onError: (ctx) => {
           toast.error(ctx.error.message);

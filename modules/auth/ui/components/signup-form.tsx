@@ -57,7 +57,7 @@ export const SignupForm = ({
       {
         onSuccess: () => {
           toast.success("Welcome, your account has been created!");
-          router.push("/post-login");
+          router.push("/");
         },
         onError: (ctx) => {
           toast.error(ctx.error.message);

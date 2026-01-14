@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/server";
-import { resolveHomeUrl } from "@/lib/auth/resolve-home-url";
+import { redirectToHome } from "@/lib/auth/navigation";
 
 const Page = async () => {
   const currentUser = await getCurrentUser();
@@ -9,12 +9,10 @@ const Page = async () => {
     redirect("/login");
   }
 
-  const homeUrl = resolveHomeUrl(currentUser);
-
   /**
    * Redirect to url access
    */
-  redirect(homeUrl);
+  return redirectToHome(currentUser);
 };
 
 export default Page;

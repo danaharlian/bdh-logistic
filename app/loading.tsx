@@ -1,7 +1,7 @@
 import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { Spinner } from "@/components/ui/spinner";
 
-const LoadingPostLogin = () => {
+const LoadingRoot = () => {
   return (
     <div className="grid min-h-screen grid-cols-1">
       <Empty>
@@ -14,4 +14,4 @@ const LoadingPostLogin = () => {
   );
 };
 
-export default LoadingPostLogin;
+export default LoadingRoot;

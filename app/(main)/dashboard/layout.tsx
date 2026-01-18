@@ -1,39 +1,33 @@
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { WarehouseSidebar } from "@/modules/warehouse/ui/components/warehouse-sidebar";
 import { WarehouseNavbar } from "@/modules/warehouse/ui/components/warehouse-navbar";
-import { requireProcurementStaff } from "@/lib/auth/guards";
+import { requireSuperAdmin } from "@/lib/auth/guards";
 import { buildSidebarNav } from "@/lib/navigation/build-sidebar";
 import { adapterSidebarNav } from "@/lib/navigation/adapter-sidebar";
-import { WAREHOUSE_NAV } from "@/lib/navigation/navigation";
+import { GLOBAL_NAV } from "@/lib/navigation/navigation";
+import { RoleType } from "@/lib/generated/prisma/enums";
 
 type Props = Readonly<{
   children: React.ReactNode;
-  params: Promise<{ warehouseId: string }>;
 }>;
 
-export default async function ProcurementLayout({ children, params }: Props) {
-  const { warehouseId } = await params;
+export default async function SuperAdminLayout({ children }: Props) {
+  const user = await requireSuperAdmin();
 
-  const user = await requireProcurementStaff(warehouseId);
+  const pathname = "/dashboard";
 
-  const role = user.warehouseRoles[warehouseId];
-  console.log({role})
-
-  const pathname = `/w/${warehouseId}/procurement/dashboard`;
-
-  const filteredNav = buildSidebarNav({
-    nav: WAREHOUSE_NAV,
-    warehouseId,
+  const filtered = buildSidebarNav({
+    nav: GLOBAL_NAV,
+    warehouseId: undefined,
     data: {
       permissions: user.permissions,
       warehouseRoles: user.warehouseRoles,
     },
-    role,
+    role: RoleType.SUPER_ADMIN,
   });
 
   const sidebarItems = adapterSidebarNav({
-    items: filteredNav,
-    warehouseId,
+    items: filtered,
     pathname,
   });
 

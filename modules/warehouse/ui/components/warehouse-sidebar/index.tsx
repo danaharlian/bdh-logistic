@@ -1,19 +1,9 @@
 "use client";
 
 import * as React from "react";
-import {
-  BookOpen,
-  Bot,
-  Hospital,
-  Frame,
-  Map,
-  PieChart,
-  Settings2,
-  SquareTerminal,
-} from "lucide-react";
-
+import { Hospital } from "lucide-react";
 import { NavMain } from "@/modules/warehouse/ui/components/warehouse-sidebar/nav-main";
-import { NavProjects } from "@/modules/warehouse/ui/components/warehouse-sidebar/nav-projects";
+// import { NavProjects } from "@/modules/warehouse/ui/components/warehouse-sidebar/nav-projects";
 import { NavUser } from "@/modules/warehouse/ui/components/warehouse-sidebar/nav-user";
 import {
   Sidebar,
@@ -24,122 +14,35 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { UserSessionServer } from "@/lib/auth";
+import { BuiltNavItem } from "@/lib/navigation/navigation-config";
 
-const data = {
-  user: {
-    name: "dana",
-    email: "dana@example.com",
-    avatar: "/bdh.webp",
-  },
-  navMain: [
-    {
-      title: "Playground",
-      url: "#",
-      icon: SquareTerminal,
-      isActive: true,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Models",
-      url: "#",
-      icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
-  ],
-};
+type Props = {
+  user: UserSessionServer;
+  navigation: BuiltNavItem[];
+} & React.ComponentProps<typeof Sidebar>;
 
-export const WarehouseSidebar = ({
-  ...props
-}: React.ComponentProps<typeof Sidebar>) => {
+// const data = {
+//   projects: [
+//     {
+//       name: "Design Engineering",
+//       url: "#",
+//       icon: Frame,
+//     },
+//     {
+//       name: "Sales & Marketing",
+//       url: "#",
+//       icon: PieChart,
+//     },
+//     {
+//       name: "Travel",
+//       url: "#",
+//       icon: Map,
+//     },
+//   ],
+// };
+
+export const WarehouseSidebar = ({ user, navigation, ...props }: Props) => {
   return (
     <Sidebar variant="inset" {...props} collapsible="icon">
       <SidebarHeader>
@@ -162,11 +65,11 @@ export const WarehouseSidebar = ({
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        <NavMain items={navigation} />
+        {/* <NavProjects projects={data.projects} /> */}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={user} />
       </SidebarFooter>
     </Sidebar>
   );

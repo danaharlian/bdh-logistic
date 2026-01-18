@@ -1,11 +1,11 @@
-import { WarehouseLayout } from "@/modules/warehouse/ui/layouts/warehouse-layout";
+import { WarehouseWrapper } from "@/modules/warehouse/ui/components/warehouse-wrapper";
 
 type Props = Readonly<{
   children: React.ReactNode;
 }>;
 
 const Layout = ({ children }: Props) => {
-  return <WarehouseLayout>{children}</WarehouseLayout>;
+  return <WarehouseWrapper>{children}</WarehouseWrapper>;
 };
 
 export default Layout;

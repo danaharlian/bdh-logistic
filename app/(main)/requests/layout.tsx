@@ -2,7 +2,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { WarehouseSidebar } from "@/modules/warehouse/ui/components/warehouse-sidebar";
 import { WarehouseNavbar } from "@/modules/warehouse/ui/components/warehouse-navbar";
 import { requireRoomStaff } from "@/lib/auth/guards";
-import { buildSidebarNav } from "@/lib/navigation/build-sidebar";
+import { buildSidebarNavigation } from "@/lib/navigation/build-sidebar";
 import { GLOBAL_NAV } from "@/lib/navigation/navigation";
 import { RoleType } from "@/lib/generated/prisma/enums";
 
@@ -13,7 +13,7 @@ type Props = Readonly<{
 export default async function RoomStaffLayout({ children }: Props) {
   const user = await requireRoomStaff();
 
-  const filtered = buildSidebarNav({
+  const filtered = buildSidebarNavigation({
     nav: GLOBAL_NAV,
     warehouseId: undefined,
     data: {

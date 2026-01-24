@@ -3,8 +3,8 @@ import {
   UserWarehouseRoleWithPermissions,
   WarehouseRoleMap,
   UserWarehouseData,
-} from "./types";
-import { createPermissionKey } from "./utils";
+} from "@/lib/rbac/types";
+import { createPermissionKey } from "@/lib/rbac/utils";
 
 export const permissionService = {
   /**
@@ -14,7 +14,7 @@ export const permissionService = {
    * @returns Object containing both permissions and warehouse roles
    */
   getUserWarehouseData: (
-    rows: UserWarehouseRoleWithPermissions[]
+    rows: UserWarehouseRoleWithPermissions[],
   ): UserWarehouseData => {
     const permissions: PermissionMap = {};
     const warehouseRoles: WarehouseRoleMap = {};
@@ -32,7 +32,7 @@ export const permissionService = {
       for (const rp of row.role.rolePermissions) {
         const key = createPermissionKey(
           rp.permission.module,
-          rp.permission.action
+          rp.permission.action,
         );
         warehousePermissions[key] = true;
       }

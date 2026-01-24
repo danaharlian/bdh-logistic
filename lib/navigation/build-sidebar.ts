@@ -1,12 +1,11 @@
-import { hasPermission } from "../auth/permission-check";
-import { RoleType } from "../generated/prisma/enums";
-import { UserWarehouseData } from "../rbac";
-import { BuiltNavItem, NavItem } from "./navigation-types";
+import { RoleType } from "@/lib/generated/prisma/enums";
+import { hasNavigationPermission, UserWarehouseData } from "@/lib/rbac";
+import { BuiltNavItem, NavItem } from "@/lib/navigation/navigation-types";
 
 /**
  * Input args for building sidebar navigation
  */
-export type BuildSidebarNavArgs = {
+export type BuildSidebarNavigationArgs = {
   nav: NavItem[];
   /**
    * undefined = global nav
@@ -25,22 +24,22 @@ export type BuildSidebarNavArgs = {
   data: UserWarehouseData;
 };
 
-type BuildItemArgs = {
+type BuildNavigationItemArgs = {
   item: NavItem;
   warehouseId?: string;
   role: RoleType;
-  data: BuildSidebarNavArgs["data"];
+  data: BuildSidebarNavigationArgs["data"];
 };
 
-export function buildSidebarNav({
+export function buildSidebarNavigation({
   nav,
   warehouseId,
   role,
   data,
-}: BuildSidebarNavArgs): BuiltNavItem[] {
+}: BuildSidebarNavigationArgs): BuiltNavItem[] {
   return nav
     .map((item) =>
-      buildNavItem({
+      buildNavigationItem({
         item,
         warehouseId,
         role,
@@ -50,12 +49,12 @@ export function buildSidebarNav({
     .filter(Boolean) as BuiltNavItem[];
 }
 
-function buildNavItem({
+function buildNavigationItem({
   item,
   warehouseId,
   role,
   data,
-}: BuildItemArgs): BuiltNavItem | null {
+}: BuildNavigationItemArgs): BuiltNavItem | null {
   /* ---------------- ROLE FILTER (UX ONLY) ---------------- */
   if (item.allowedRoles && !item.allowedRoles.includes(role)) {
     return null;
@@ -63,7 +62,9 @@ function buildNavItem({
 
   /* ---------------- PERMISSION FILTER ---------------- */
   if (item.permissions && item.permissions.length > 0) {
-    if (!hasPermission(item.permissions, warehouseId, data.permissions)) {
+    if (
+      !hasNavigationPermission(item.permissions, warehouseId, data.permissions)
+    ) {
       return null;
     }
   }
@@ -72,7 +73,7 @@ function buildNavItem({
   if (item.children && "children" in item) {
     const children = item.children
       .map((child) =>
-        buildNavItem({
+        buildNavigationItem({
           item: child,
           warehouseId,
           role,
@@ -88,7 +89,7 @@ function buildNavItem({
       id: item.id,
       title: item.title,
       icon: item.icon,
-      isActive: false, // handled later
+      isActive: false,
       children,
     };
   }
@@ -100,6 +101,6 @@ function buildNavItem({
     title: item.title,
     icon: item.icon,
     url: item.url,
-    isActive: false, // handled later
+    isActive: false,
   };
 }

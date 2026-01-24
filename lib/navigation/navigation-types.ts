@@ -1,6 +1,6 @@
 import { RoleType } from "@/lib/generated/prisma/enums";
-import { IconName } from "./icon-map";
-import { PermissionKey } from "../rbac";
+import { IconName } from "@/lib/navigation/icon-map";
+import { PermissionKey } from "@/lib/rbac";
 
 /**
  * Base properties shared by all nav items

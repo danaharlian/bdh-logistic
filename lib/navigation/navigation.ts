@@ -1,6 +1,9 @@
-import { PermissionAction, PermissionModule } from "../generated/prisma/enums";
-import { createPermissionKey } from "../rbac";
-import { NavItem } from "./navigation-types";
+import {
+  PermissionAction,
+  PermissionModule,
+} from "@/lib/generated/prisma/enums";
+import { createPermissionKey } from "@/lib/rbac";
+import { NavItem } from "@/lib/navigation/navigation-types";
 
 /**
  * GLOBAL NAVIGATION (no warehouse)

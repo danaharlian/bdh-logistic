@@ -2,7 +2,7 @@ import {
   PermissionAction,
   PermissionModule,
 } from "@/lib/generated/prisma/enums";
-import { PermissionKey } from "./types";
+import { PermissionKey } from "@/lib/rbac/types";
 
 /**
  * Creates a permission key from module and action
@@ -12,7 +12,7 @@ import { PermissionKey } from "./types";
  */
 export function createPermissionKey(
   module: PermissionModule,
-  action: PermissionAction
+  action: PermissionAction,
 ): PermissionKey {
   return `${module}:${action}` as PermissionKey;
 }
@@ -23,7 +23,7 @@ export function createPermissionKey(
  * @returns Object with module and action, or null if invalid
  */
 export function parsePermissionKey(
-  key: string
+  key: string,
 ): { module: PermissionModule; action: PermissionAction } | null {
   const [module, action] = key.split(":");
   if (!module || !action) return null;
@@ -33,4 +33,3 @@ export function parsePermissionKey(
     action: action as PermissionAction,
   };
 }
-

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/server";
-import { redirectToHome } from "@/lib/auth/navigation";
+import { redirectToHome } from "@/lib/auth/routing";
 
 const Page = async () => {
   const currentUser = await getCurrentUser();

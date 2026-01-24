@@ -18,17 +18,22 @@ export type {
   PermissionMap,
   UserWarehouseRoleWithPermissions,
   UserWarehouseData,
-} from "./types";
+} from "@/lib/rbac/types";
 
 // Services
-export { permissionService } from "./service";
+export { permissionService } from "@/lib/rbac/service";
 
 // Checkers
-export { can, canAny, canAll } from "./checker";
+export {
+  can,
+  canAny,
+  canAll,
+  hasNavigationPermission,
+  hasRoleInWarehouse,
+} from "@/lib/rbac/checker";
 
 // Queries
-export { permissionQueries } from "./queries";
+export { permissionQueries } from "@/lib/rbac/queries";
 
 // Utils
-export { createPermissionKey, parsePermissionKey } from "./utils";
-
+export { createPermissionKey, parsePermissionKey } from "@/lib/rbac/utils";

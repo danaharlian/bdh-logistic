@@ -1,34 +1,52 @@
-import { BuiltNavItem } from "./navigation-types";
+import { BuiltNavItem } from "@/lib/navigation/navigation-types";
 
-type AdapterArgs = {
+type MarkActiveItemsArgs = {
   items: BuiltNavItem[];
   pathname: string;
 };
 
 /**
- * Adapter for UI state:
- * - mark active item
- * - auto expand parents
+ * Normalizes a path by removing trailing slashes
  */
-export function adapterSidebarNav({
-  items,
-  pathname,
-}: AdapterArgs): BuiltNavItem[] {
-  return items.map((item) => adaptItem(item, pathname));
+function normalizePath(path: string): string {
+  return path.replace(/\/+$/, "");
 }
 
-function adaptItem(item: BuiltNavItem, pathname: string): BuiltNavItem {
-  const normalizedPath = normalize(pathname);
+/**
+ * Checks if a pathname matches or is a child of the given href
+ */
+function isActivePath(pathname: string, href: string): boolean {
+  const normalizedPathname = normalizePath(pathname);
+  const normalizedHref = normalizePath(href);
+  return (
+    normalizedPathname === normalizedHref ||
+    normalizedPathname.startsWith(normalizedHref + "/")
+  );
+}
 
+/**
+ * Adapts sidebar navigation items by marking active items and auto-expanding parents
+ */
+export function markActiveSidebarItems({
+  items,
+  pathname,
+}: MarkActiveItemsArgs): BuiltNavItem[] {
+  return items.map((item) => adaptNavigationItem(item, pathname));
+}
+
+function adaptNavigationItem(
+  item: BuiltNavItem,
+  pathname: string,
+): BuiltNavItem {
   const isSelfActive =
-    item.url !== undefined &&
-    (normalizedPath === normalize(item.url) ||
-      normalizedPath.startsWith(normalize(item.url) + "/"));
+    item.url !== undefined && isActivePath(pathname, item.url);
 
   let children: BuiltNavItem[] | undefined;
 
   if (item.children && item.children.length) {
-    children = item.children.map((child) => adaptItem(child, pathname));
+    children = item.children.map((child) =>
+      adaptNavigationItem(child, pathname),
+    );
   }
 
   const isActive = isSelfActive || children?.some((c) => c.isActive) || false;
@@ -38,8 +56,4 @@ function adaptItem(item: BuiltNavItem, pathname: string): BuiltNavItem {
     isActive,
     children,
   };
-}
-
-function normalize(path: string): string {
-  return path.replace(/\/+$/, "");
 }

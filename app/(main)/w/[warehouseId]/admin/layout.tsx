@@ -2,7 +2,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { WarehouseSidebar } from "@/modules/warehouse/ui/components/warehouse-sidebar";
 import { WarehouseNavbar } from "@/modules/warehouse/ui/components/warehouse-navbar";
 import { requireWarehouseAdmin } from "@/lib/auth/guards";
-import { buildSidebarNav } from "@/lib/navigation/build-sidebar";
+import { buildSidebarNavigation } from "@/lib/navigation/build-sidebar";
 import { WAREHOUSE_NAV } from "@/lib/navigation/navigation";
 
 type Props = Readonly<{
@@ -17,7 +17,7 @@ const Layout = async ({ children, params }: Props) => {
 
   const role = user.warehouseRoles[warehouseId];
 
-  const filteredNav = buildSidebarNav({
+  const filteredNav = buildSidebarNavigation({
     nav: WAREHOUSE_NAV,
     warehouseId,
     data: {

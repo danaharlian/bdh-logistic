@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { UserWarehouseRoleWithPermissions } from "./types";
+import { UserWarehouseRoleWithPermissions } from "@/lib/rbac/types";
 
 export const permissionQueries = {
   /**
@@ -8,7 +8,7 @@ export const permissionQueries = {
    * @returns Array of user warehouse roles with nested permissions
    */
   getUserWarehouseRoles: async (
-    userId: string
+    userId: string,
   ): Promise<UserWarehouseRoleWithPermissions[]> => {
     return prisma.userWarehouseRole.findMany({
       where: { userId },

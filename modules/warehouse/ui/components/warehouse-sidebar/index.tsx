@@ -15,7 +15,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { UserSessionServer } from "@/lib/auth";
-import { adapterSidebarNav } from "@/lib/navigation/adapter-sidebar";
+import { markActiveSidebarItems } from "@/lib/navigation/adapter-sidebar";
 import { BuiltNavItem } from "@/lib/navigation/navigation-types";
 
 type Props = {
@@ -26,7 +26,7 @@ type Props = {
 export const WarehouseSidebar = ({ user, navigation, ...props }: Props) => {
   const pathname = usePathname();
 
-  const sidebarItems = adapterSidebarNav({
+  const sidebarItems = markActiveSidebarItems({
     items: navigation,
     pathname,
   });

@@ -1,6 +1,6 @@
 import { PermissionAction, PermissionModule } from "../generated/prisma/enums";
 import { createPermissionKey } from "../rbac";
-import { NavItem } from "./navigation-config";
+import { NavItem } from "./navigation-types";
 
 /**
  * GLOBAL NAVIGATION (no warehouse)
@@ -8,43 +8,35 @@ import { NavItem } from "./navigation-config";
 export const GLOBAL_NAV: NavItem[] = [
   {
     id: "superadmin-dashboard",
-    label: "Dashboard",
-    href: () => "/dashboard",
+    title: "Dashboard",
+    url: "/dashboard",
     icon: "LayoutDashboard",
     allowedRoles: ["SUPER_ADMIN"],
   },
   {
     id: "superadmin-master-data",
-    label: "Master Data",
-    href: () => '/master-data',
+    title: "Master Data",
     icon: "Blocks",
     allowedRoles: ["SUPER_ADMIN"],
     children: [
       {
         id: "superadmin-items",
-        label: "Items",
-        href: () => '/master-data/items',
+        title: "Items",
+        url: "/master-data/items",
       },
       {
         id: "categories",
-        label: "Categories",
-        href: () => '/master-data/categories',
+        title: "Categories",
+        url: "/master-data/categories",
       },
     ],
   },
   {
     id: "helper-staff-requests",
-    label: "My Requests",
-    href: () => "/requests",
+    title: "My Requests",
+    url: "/requests",
     icon: "ClipboardList",
     allowedRoles: ["STAF_RUANGAN"],
-  },
-  {
-    id: "profile",
-    label: "My Profile",
-    href: () => "/profile",
-    icon: "Users",
-    allowedRoles: ["SUPER_ADMIN", "STAF_PENGADAAN", "STAF_RUANGAN"],
   },
 ];
 
@@ -54,9 +46,10 @@ export const GLOBAL_NAV: NavItem[] = [
 export const WAREHOUSE_NAV: NavItem[] = [
   {
     id: "admin-warehouse-dashboard",
-    label: "Dashboard",
-    href: (warehouseId) => `/w/${warehouseId}/admin/dashboard`,
+    title: "Dashboard",
+    url: "/w/:warehouseId/admin/dashboard",
     icon: "LayoutDashboard",
+    requiresWarehouse: true,
     permissions: [
       createPermissionKey(PermissionModule.DASHBOARD, PermissionAction.VIEW),
     ],
@@ -64,9 +57,10 @@ export const WAREHOUSE_NAV: NavItem[] = [
   },
   {
     id: "procurement-staff-dashboard",
-    label: "Dashboard",
+    title: "Dashboard",
     icon: "ShoppingCart",
-    href: (warehouseId) => `/w/${warehouseId}/procurement/dashboard`,
+    url: "/w/:warehouseId/procurement/dashboard",
+    requiresWarehouse: true,
     permissions: [
       createPermissionKey(PermissionModule.PROCUREMENT, PermissionAction.VIEW),
     ],

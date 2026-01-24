@@ -3,7 +3,6 @@ import { WarehouseSidebar } from "@/modules/warehouse/ui/components/warehouse-si
 import { WarehouseNavbar } from "@/modules/warehouse/ui/components/warehouse-navbar";
 import { requireProcurementStaff } from "@/lib/auth/guards";
 import { buildSidebarNav } from "@/lib/navigation/build-sidebar";
-import { adapterSidebarNav } from "@/lib/navigation/adapter-sidebar";
 import { WAREHOUSE_NAV } from "@/lib/navigation/navigation";
 
 type Props = Readonly<{
@@ -17,9 +16,6 @@ export default async function ProcurementLayout({ children, params }: Props) {
   const user = await requireProcurementStaff(warehouseId);
 
   const role = user.warehouseRoles[warehouseId];
-  console.log({role})
-
-  const pathname = `/w/${warehouseId}/procurement/dashboard`;
 
   const filteredNav = buildSidebarNav({
     nav: WAREHOUSE_NAV,
@@ -31,15 +27,9 @@ export default async function ProcurementLayout({ children, params }: Props) {
     role,
   });
 
-  const sidebarItems = adapterSidebarNav({
-    items: filteredNav,
-    warehouseId,
-    pathname,
-  });
-
   return (
     <SidebarProvider>
-      <WarehouseSidebar user={user} navigation={sidebarItems} />
+      <WarehouseSidebar user={user} navigation={filteredNav} />
       <SidebarInset>
         <WarehouseNavbar />
         <main className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</main>

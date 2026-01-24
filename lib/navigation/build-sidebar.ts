@@ -1,46 +1,105 @@
 import { hasPermission } from "../auth/permission-check";
 import { RoleType } from "../generated/prisma/enums";
 import { UserWarehouseData } from "../rbac";
-import { NavItem } from "./navigation-config";
+import { BuiltNavItem, NavItem } from "./navigation-types";
 
-type Props = {
+/**
+ * Input args for building sidebar navigation
+ */
+export type BuildSidebarNavArgs = {
   nav: NavItem[];
+  /**
+   * undefined = global nav
+   * string = warehouse scoped nav
+   */
   warehouseId?: string;
+
+  /**
+   * Current role context (UX-level)
+   */
+  role: RoleType;
+
+  /**
+   * Permission & role data from session
+   */
   data: UserWarehouseData;
-  role?: RoleType;
+};
+
+type BuildItemArgs = {
+  item: NavItem;
+  warehouseId?: string;
+  role: RoleType;
+  data: BuildSidebarNavArgs["data"];
 };
 
 export function buildSidebarNav({
   nav,
   warehouseId,
-  data,
   role,
-}: Props): NavItem[] {
-  console.log({nav, data, role})
+  data,
+}: BuildSidebarNavArgs): BuiltNavItem[] {
   return nav
-    .filter((item) => {
-      // role-based UX filtering
-      if (item.allowedRoles && role) {
-        if (!item.allowedRoles.includes(role)) return false;
-      }
+    .map((item) =>
+      buildNavItem({
+        item,
+        warehouseId,
+        role,
+        data,
+      }),
+    )
+    .filter(Boolean) as BuiltNavItem[];
+}
 
-      // permission-based filtering
-      if (item.permissions) {
-        return hasPermission(data.permissions, warehouseId, item.permissions);
-      } 
+function buildNavItem({
+  item,
+  warehouseId,
+  role,
+  data,
+}: BuildItemArgs): BuiltNavItem | null {
+  /* ---------------- ROLE FILTER (UX ONLY) ---------------- */
+  if (item.allowedRoles && !item.allowedRoles.includes(role)) {
+    return null;
+  }
 
-      return true;
-    })
-    .map((item) => ({
-      ...item,
-      children: item.children
-        ? buildSidebarNav({
-            nav: item.children,
-            warehouseId,
-            data,
-            role,
-          })
-        : undefined,
-    }))
-    .filter((item) => !item.children || item.children.length > 0);
+  /* ---------------- PERMISSION FILTER ---------------- */
+  if (item.permissions && item.permissions.length > 0) {
+    if (!hasPermission(item.permissions, warehouseId, data.permissions)) {
+      return null;
+    }
+  }
+
+  /* ---------------- GROUP ITEM ---------------- */
+  if (item.children && "children" in item) {
+    const children = item.children
+      .map((child) =>
+        buildNavItem({
+          item: child,
+          warehouseId,
+          role,
+          data,
+        }),
+      )
+      .filter(Boolean) as BuiltNavItem[];
+
+    // hide empty groups
+    if (children.length === 0) return null;
+
+    return {
+      id: item.id,
+      title: item.title,
+      icon: item.icon,
+      isActive: false, // handled later
+      children,
+    };
+  }
+
+  /* ---------------- LEAF ITEM ---------------- */
+
+  return {
+    id: item.id,
+    title: item.title,
+    icon: item.icon,
+    url: item.url,
+    isActive: false, // handled later
+  };
 }

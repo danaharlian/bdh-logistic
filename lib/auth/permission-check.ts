@@ -1,17 +1,25 @@
 import type { PermissionKey, PermissionMap } from "../rbac";
 
+/**
+ * Permission rule:
+ * - If warehouseId exists → check that warehouse
+ * - If global nav → check ANY warehouse
+ */
 export function hasPermission(
-  permissions: PermissionMap,
+  required: PermissionKey[],
   warehouseId: string | undefined,
-  required: PermissionKey[] | undefined
+  permissions: PermissionMap,
 ): boolean {
-  if (!required || required.length === 0) return true;
+  // warehouse-scoped
+  if (warehouseId) {
+    const perms = permissions[warehouseId];
+    if (!perms) return false;
 
-  // super admin already has everything in map
-  if (!warehouseId) return false;
+    return required.some((p) => perms[p]);
+  }
 
-  const warehousePerms = permissions[warehouseId];
-  if (!warehousePerms) return false;
-
-  return required.some((key) => warehousePerms[key]);
+  // global nav → any warehouse
+  return Object.values(permissions).some((perms) =>
+    required.some((p) => perms?.[p]),
+  );
 }

@@ -1,41 +1,45 @@
-import type { NavItem, BuiltNavItem } from "./navigation-config";
-import { isActivePath } from "./is-active";
+import { BuiltNavItem } from "./navigation-types";
 
+type AdapterArgs = {
+  items: BuiltNavItem[];
+  pathname: string;
+};
+
+/**
+ * Adapter for UI state:
+ * - mark active item
+ * - auto expand parents
+ */
 export function adapterSidebarNav({
   items,
-  warehouseId,
   pathname,
-}: {
-  items: NavItem[];
-  warehouseId?: string;
-  pathname: string;
-}): BuiltNavItem[] {
-  return items.map((item) => {
-    const href = item.href(warehouseId);
-    const selfActive = isActivePath(pathname, href);
+}: AdapterArgs): BuiltNavItem[] {
+  return items.map((item) => adaptItem(item, pathname));
+}
 
-    const children = item.children
-    ? adapterSidebarNav({
-        items: item.children,
-        warehouseId,
-        pathname,
-      })
-    : undefined;
+function adaptItem(item: BuiltNavItem, pathname: string): BuiltNavItem {
+  const normalizedPath = normalize(pathname);
 
+  const isSelfActive =
+    item.url !== undefined &&
+    (normalizedPath === normalize(item.url) ||
+      normalizedPath.startsWith(normalize(item.url) + "/"));
 
-    // Parent active if one of the children is active
-    const childActive =
-      children?.some(
-        (c) => c.isActive || c.children?.some(cc => cc.isActive)
-      ) ?? false;
+  let children: BuiltNavItem[] | undefined;
 
-    return {
-      id: item.id,
-      label: item.label,
-      icon: item.icon,
-      href,
-      isActive: selfActive || childActive,
-      children
-    };
-  });
+  if (item.children && item.children.length) {
+    children = item.children.map((child) => adaptItem(child, pathname));
+  }
+
+  const isActive = isSelfActive || children?.some((c) => c.isActive) || false;
+
+  return {
+    ...item,
+    isActive,
+    children,
+  };
+}
+
+function normalize(path: string): string {
+  return path.replace(/\/+$/, "");
 }

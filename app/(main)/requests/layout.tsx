@@ -4,7 +4,6 @@ import { WarehouseNavbar } from "@/modules/warehouse/ui/components/warehouse-nav
 import { requireRoomStaff } from "@/lib/auth/guards";
 import { buildSidebarNav } from "@/lib/navigation/build-sidebar";
 import { GLOBAL_NAV } from "@/lib/navigation/navigation";
-import { adapterSidebarNav } from "@/lib/navigation/adapter-sidebar";
 import { RoleType } from "@/lib/generated/prisma/enums";
 
 type Props = Readonly<{
@@ -13,8 +12,6 @@ type Props = Readonly<{
 
 export default async function RoomStaffLayout({ children }: Props) {
   const user = await requireRoomStaff();
-
-  const pathname = "/requests";
 
   const filtered = buildSidebarNav({
     nav: GLOBAL_NAV,
@@ -26,14 +23,9 @@ export default async function RoomStaffLayout({ children }: Props) {
     role: RoleType.STAF_RUANGAN,
   });
 
-  const sidebarItems = adapterSidebarNav({
-    items: filtered,
-    pathname,
-  });
-
   return (
     <SidebarProvider>
-      <WarehouseSidebar user={user} navigation={sidebarItems} />
+      <WarehouseSidebar user={user} navigation={filtered} />
       <SidebarInset>
         <WarehouseNavbar />
         <main className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</main>

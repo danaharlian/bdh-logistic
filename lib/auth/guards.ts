@@ -29,92 +29,129 @@ type GuardOptions = {
  */
 export async function withGuard(
   warehouseId?: string,
-  options: GuardOptions = {}
+  options: GuardOptions = {},
 ): Promise<UserSessionServer> {
-  const {
-    requireAuth = true,
-    requireSuperAdmin = false,
-    requireRole,
-    requireWarehouseAccess = false,
-    requirePermission,
-    requireAllPermissions,
-    requireAnyPermissions,
-  } = options;
+  const { requireAuth = true } = options;
 
-  // Check authentication
-  if (requireAuth) {
-    const user = await getCurrentUser();
+  if (!requireAuth) {
+    throw new Error(
+      "Invalid guard configuration: requireAuth must be true for now",
+    );
+  }
 
-    if (!user) {
-      redirect("/login");
-    }
+  const user = await getCurrentUser();
 
-    // Superadmin bypass (except when explicitly requiring superadmin)
-    if (user.isSuperAdmin && !requireSuperAdmin) {
-      return user;
-    }
+  if (!user) {
+    redirect("/login");
+  }
 
-    // Check superadmin requirement
-    if (requireSuperAdmin && !user.isSuperAdmin) {
-      redirect("/unauthorized");
-    }
-
-    // Check warehouse access
-    if (requireWarehouseAccess && warehouseId) {
-      if (!user.warehouseRoles?.[warehouseId]) {
-        redirect("/unauthorized");
-      }
-    }
-
-    // Check specific role
-    if (requireRole && warehouseId) {
-      const userRole = user.warehouseRoles?.[warehouseId];
-      if (userRole !== requireRole) {
-        redirect("/unauthorized");
-      }
-    }
-
-    // Check single permission
-    if (requirePermission && warehouseId) {
-      const hasPermission = can(
-        user.permissions,
-        warehouseId,
-        requirePermission.module,
-        requirePermission.action
-      );
-      if (!hasPermission) {
-        redirect("/unauthorized");
-      }
-    }
-
-    // Check all permissions
-    if (requireAllPermissions && warehouseId) {
-      const hasAllPermissions = canAll(
-        user.permissions,
-        warehouseId,
-        requireAllPermissions
-      );
-      if (!hasAllPermissions) {
-        redirect("/unauthorized");
-      }
-    }
-
-    // Check any permission
-    if (requireAnyPermissions && warehouseId) {
-      const hasAnyPermission = canAny(
-        user.permissions,
-        warehouseId,
-        requireAnyPermissions
-      );
-      if (!hasAnyPermission) {
-        redirect("/unauthorized");
-      }
-    }
-
+  // 1. Superadmin Checks
+  if (checkSuperAdminAccess(user, options)) {
     return user;
   }
 
-  throw new Error("Invalid guard configuration");
+  // 2. Warehouse Level Checks (Role & Access)
+  if (warehouseId) {
+    checkWarehouseAccess(user, warehouseId, options);
+  }
+
+  // 3. Permission Checks
+  if (warehouseId) {
+    checkPermissions(user, warehouseId, options);
+  }
+
+  return user;
+}
+
+function checkSuperAdminAccess(
+  user: UserSessionServer,
+  options: GuardOptions,
+): boolean {
+  const { requireSuperAdmin = false } = options;
+
+  // Superadmin bypass (except when explicitly requiring superadmin, which is handled below)
+  // Actually, if requireSuperAdmin is false, and user IS superadmin, they pass everything?
+  // The original logic was:
+  // if (user.isSuperAdmin && !requireSuperAdmin) return user;
+  if (user.isSuperAdmin && !requireSuperAdmin) {
+    return true;
+  }
+
+  // Check superadmin requirement
+  if (requireSuperAdmin && !user.isSuperAdmin) {
+    redirect("/unauthorized");
+  }
+
+  return false;
+}
+
+function checkWarehouseAccess(
+  user: UserSessionServer,
+  warehouseId: string,
+  options: GuardOptions,
+) {
+  const { requireWarehouseAccess = false, requireRole } = options;
+
+  // Check warehouse access
+  if (requireWarehouseAccess) {
+    if (!user.warehouseRoles?.[warehouseId]) {
+      redirect("/unauthorized");
+    }
+  }
+
+  // Check specific role
+  if (requireRole) {
+    const userRole = user.warehouseRoles?.[warehouseId];
+    if (userRole !== requireRole) {
+      redirect("/unauthorized");
+    }
+  }
+}
+
+function checkPermissions(
+  user: UserSessionServer,
+  warehouseId: string,
+  options: GuardOptions,
+) {
+  const { requirePermission, requireAllPermissions, requireAnyPermissions } =
+    options;
+
+  // Check single permission
+  if (requirePermission) {
+    const hasPermission = can(
+      user.permissions,
+      warehouseId,
+      requirePermission.module,
+      requirePermission.action,
+    );
+    if (!hasPermission) {
+      redirect("/unauthorized");
+    }
+  }
+
+  // Check all permissions
+  if (requireAllPermissions) {
+    const hasAllPermissions = canAll(
+      user.permissions,
+      warehouseId,
+      requireAllPermissions,
+    );
+    if (!hasAllPermissions) {
+      redirect("/unauthorized");
+    }
+  }
+
+  // Check any permission
+  if (requireAnyPermissions) {
+    const hasAnyPermission = canAny(
+      user.permissions,
+      warehouseId,
+      requireAnyPermissions,
+    );
+    if (!hasAnyPermission) {
+      redirect("/unauthorized");
+    }
+  }
 }
 
 /**
@@ -128,7 +165,7 @@ export async function requireSuperAdmin(): Promise<UserSessionServer> {
  * Shorthand guard for warehouse admin routes
  */
 export async function requireWarehouseAdmin(
-  warehouseId: string
+  warehouseId: string,
 ): Promise<UserSessionServer> {
   return withGuard(warehouseId, {
     requireWarehouseAccess: true,
@@ -140,7 +177,7 @@ export async function requireWarehouseAdmin(
  * Shorthand guard for procurement staff routes
  */
 export async function requireProcurementStaff(
-  warehouseId: string
+  warehouseId: string,
 ): Promise<UserSessionServer> {
   return withGuard(warehouseId, {
     requireWarehouseAccess: true,
@@ -159,7 +196,7 @@ export async function requireRoomStaff(): Promise<UserSessionServer> {
   }
 
   const hasRoomStaffRole = Object.values(user.warehouseRoles ?? {}).includes(
-    "STAF_RUANGAN"
+    "STAF_RUANGAN",
   );
 
   if (!hasRoomStaffRole && !user.isSuperAdmin) {
@@ -175,7 +212,7 @@ export async function requireRoomStaff(): Promise<UserSessionServer> {
 export async function requirePermission(
   warehouseId: string,
   module: PermissionModule,
-  action: PermissionAction
+  action: PermissionAction,
 ): Promise<UserSessionServer> {
   return withGuard(warehouseId, {
     requireWarehouseAccess: true,

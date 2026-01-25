@@ -15,12 +15,12 @@ function normalizePath(path: string): string {
 /**
  * Checks if a pathname matches or is a child of the given href
  */
-function isActivePath(pathname: string, href: string): boolean {
+function isActivePath(pathname: string, url: string): boolean {
   const normalizedPathname = normalizePath(pathname);
-  const normalizedHref = normalizePath(href);
+  const normalizedUrl = normalizePath(url);
   return (
-    normalizedPathname === normalizedHref ||
-    normalizedPathname.startsWith(normalizedHref + "/")
+    normalizedPathname === normalizedUrl ||
+    normalizedPathname.startsWith(normalizedUrl + "/")
   );
 }
 

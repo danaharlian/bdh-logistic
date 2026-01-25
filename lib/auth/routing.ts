@@ -2,50 +2,69 @@ import { redirect } from "next/navigation";
 import { UserSessionServer } from "@/lib/auth";
 import { RoleType } from "@/lib/generated/prisma/enums";
 
+// Configuration for role-based routing
+const ROLE_HOME_URLS: Record<string, (id: string) => string> = {
+  ADMIN_GUDANG: (id) => `/w/${id}/admin/dashboard`,
+  STAF_PENGADAAN: (id) => `/w/${id}/procurement/dashboard`,
+  STAF_RUANGAN: () => `/requests`,
+};
+
+// Priority order for resolving home URL (higher index = lower priority?)
+// Actually let's do: element 0 is highest priority.
+const ROLE_PRIORITY: RoleType[] = [
+  "ADMIN_GUDANG",
+  "STAF_PENGADAAN",
+  "STAF_RUANGAN",
+];
+
 /**
  * Resolves the home URL for a user based on their roles and permissions
  */
 export function resolveHomeUrl(user: UserSessionServer): string {
   if (!user) return "/login";
 
-  const roleEntries = Object.entries(user.warehouseRoles ?? {});
-
   // Superadmin gets access to superadmin dashboard
   if (user.isSuperAdmin) {
     return "/dashboard";
   }
 
-  // Priority: ADMIN_GUDANG > STAF_PENGADAAN > STAF_RUANGAN
+  const roleEntries = Object.entries(user.warehouseRoles ?? {});
 
-  // 1. Admin Gudang (highest priority warehouse role)
-  const adminWarehouse = roleEntries.find(
-    ([, role]) => role === "ADMIN_GUDANG"
-  )?.[0];
-
-  if (adminWarehouse) {
-    return `/w/${adminWarehouse}/admin/dashboard`;
+  // If no roles, unauthorized
+  if (roleEntries.length === 0) {
+    return "/unauthorized";
   }
 
-  // 2. Staf Pengadaan
-  const procurementWarehouses = roleEntries
-    .filter(([, role]) => role === "STAF_PENGADAAN")
-    .map(([warehouseId]) => warehouseId);
+  // Iterate through priority list to find the first matching role
+  for (const roleType of ROLE_PRIORITY) {
+    // specific logic for procurement having multiple warehouses
+    if (roleType === "STAF_PENGADAAN") {
+      const procurementWarehouses = roleEntries
+        .filter(([, role]) => role === "STAF_PENGADAAN")
+        .map(([warehouseId]) => warehouseId);
 
-  if (procurementWarehouses.length > 0) {
-    return `/w/${procurementWarehouses[0]}/procurement/dashboard`;
+      if (procurementWarehouses.length > 1) {
+        return "/select-warehouse";
+      }
+      if (procurementWarehouses.length === 1) {
+        return ROLE_HOME_URLS["STAF_PENGADAAN"](procurementWarehouses[0]);
+      }
+    } else {
+      // For other roles, just find the first warehouse with that role
+      // Note: This logic assumes if you have ADMIN_GUDANG in ANY warehouse, you go there.
+      // If you have it in multiple, we pick the first one found.
+      const warehouseId = roleEntries.find(
+        ([, role]) => role === roleType,
+      )?.[0];
+      const urlBuilder = ROLE_HOME_URLS[roleType];
+
+      if (warehouseId && urlBuilder) {
+        return urlBuilder(warehouseId);
+      }
+    }
   }
 
-  // If multiple warehouses, redirect to selection page
-  if (procurementWarehouses.length > 1) {
-    return "/select-warehouse";
-  }
-
-  // 3. Staf Ruangan (lowest priority)
-  if (roleEntries.some(([, role]) => role === "STAF_RUANGAN")) {
-    return "/requests";
-  }
-
-  // Fallback for users without proper roles
+  // Fallback for users without proper roles that match our priority list
   return "/unauthorized";
 }
 
@@ -62,7 +81,7 @@ export function redirectToHome(user: UserSessionServer): never {
  */
 export function getWarehousesByRole(
   user: UserSessionServer,
-  role: RoleType
+  role: RoleType,
 ): string[] {
   return Object.entries(user.warehouseRoles ?? {})
     .filter(([, r]) => r === role)
@@ -74,7 +93,7 @@ export function getWarehousesByRole(
  */
 export function hasWarehouseAccess(
   user: UserSessionServer,
-  warehouseId: string
+  warehouseId: string,
 ): boolean {
   if (user.isSuperAdmin) return true;
   return !!user.warehouseRoles?.[warehouseId];
@@ -85,7 +104,7 @@ export function hasWarehouseAccess(
  */
 export function getWarehouseRole(
   user: UserSessionServer,
-  warehouseId: string
+  warehouseId: string,
 ): RoleType | null {
   return user.warehouseRoles?.[warehouseId] ?? null;
 }

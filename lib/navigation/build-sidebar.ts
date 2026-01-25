@@ -2,6 +2,20 @@ import { RoleType } from "@/lib/generated/prisma/enums";
 import { hasNavigationPermission, UserWarehouseData } from "@/lib/rbac";
 import { BuiltNavItem, NavItem } from "@/lib/navigation/navigation-types";
 
+function resolveUrl(url: string, warehouseId?: string): string {
+  if (!url.includes(":warehouseId")) return url;
+
+  if (!warehouseId) {
+    throw new Error(`warehouseId required for href: ${url}`);
+  }
+
+  return url.replace(":warehouseId", warehouseId);
+}
+
+function buildUrl(url: string | undefined, warehouseId?: string): string | undefined {
+  return url ? resolveUrl(url, warehouseId) : undefined;
+}
+
 /**
  * Input args for building sidebar navigation
  */
@@ -88,6 +102,7 @@ function buildNavigationItem({
     return {
       id: item.id,
       title: item.title,
+      url: buildUrl(item.url, warehouseId),
       icon: item.icon,
       isActive: false,
       children,
@@ -99,8 +114,8 @@ function buildNavigationItem({
   return {
     id: item.id,
     title: item.title,
+    url: buildUrl(item.url, warehouseId),
     icon: item.icon,
-    url: item.url,
     isActive: false,
   };
 }

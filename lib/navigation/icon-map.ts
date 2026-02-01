@@ -1,4 +1,5 @@
 import {
+  type LucideIcon,
   LayoutDashboard,
   Package,
   ShoppingCart,
@@ -21,7 +22,9 @@ import {
   Calendar,
   ShieldCheck,
   Blocks,
-  type LucideIcon,
+  List,
+  Plus,
+  Shield,
 } from "lucide-react";
 
 /**
@@ -50,7 +53,10 @@ export const iconMap: Record<IconName, LucideIcon> = {
   Truck,
   Calendar,
   ShieldCheck,
-  Blocks
+  Blocks,
+  List,
+  Plus,
+  Shield,
 };
 
 /**
@@ -85,4 +91,7 @@ export type IconName =
   | "Truck"
   | "Calendar"
   | "ShieldCheck"
-  | "Blocks";
+  | "Blocks"
+  | "List"
+  | "Plus"
+  | "Shield";

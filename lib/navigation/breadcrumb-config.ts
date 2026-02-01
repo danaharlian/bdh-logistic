@@ -8,7 +8,7 @@
  * These segments are part of the URL structure but shouldn't appear in breadcrumbs
  */
 export const BREADCRUMB_IGNORE_SEGMENTS = [
-  "w",
+  "superadmin",
   "admin",
   "procurement",
 ];
@@ -20,20 +20,13 @@ export const BREADCRUMB_IGNORE_SEGMENTS = [
 export const FEATURE_BREADCRUMB_MAP: Record<string, string> = {
   dashboard: "Dashboard",
   stock: "Stock",
-  outgoing: "Pengeluaran",
-  incoming: "Pemasukan",
+  outgoing: "Out",
+  incoming: "In",
   items: "Items",
   categories: "Categories",
   reports: "Reports",
-};
-
-/**
- * General breadcrumb labels (currently unused but kept for future use)
- */
-export const BREADCRUMB_LABELS: Record<string, string> = {
-  dashboard: "Dashboard",
-  w: "Warehouse",
   admin: "Admin",
+  warehouse: "Warehouse",
   procurement: "Procurement",
   request: "Requests",
   profile: "Profile",

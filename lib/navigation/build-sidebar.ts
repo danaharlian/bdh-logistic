@@ -1,121 +1,75 @@
-import { RoleType } from "@/lib/generated/prisma/enums";
-import { hasNavigationPermission, UserWarehouseData } from "@/lib/rbac";
-import { BuiltNavItem, NavItem } from "@/lib/navigation/navigation-types";
+import { policies, type PolicyKey } from "@/lib/policies";
+import { authorize } from "@/lib/auth/authorize";
+import { resolveRoute, isActivePath } from "./route-utils";
 
-function resolveUrl(url: string, warehouseId?: string): string {
-  if (!url.includes(":warehouseId")) return url;
-
-  if (!warehouseId) {
-    throw new Error(`warehouseId required for href: ${url}`);
-  }
-
-  return url.replace(":warehouseId", warehouseId);
-}
-
-function buildUrl(url: string | undefined, warehouseId?: string): string | undefined {
-  return url ? resolveUrl(url, warehouseId) : undefined;
-}
-
-/**
- * Input args for building sidebar navigation
- */
-export type BuildSidebarNavigationArgs = {
-  nav: NavItem[];
-  /**
-   * undefined = global nav
-   * string = warehouse scoped nav
-   */
-  warehouseId?: string;
-
-  /**
-   * Current role context (UX-level)
-   */
-  role: RoleType;
-
-  /**
-   * Permission & role data from session
-   */
-  data: UserWarehouseData;
+export type SidebarItem = {
+  id: string;
+  title: string;
+  icon?: string;
+  url?: string;
+  isActive: boolean;
+  children?: SidebarItem[];
 };
 
-type BuildNavigationItemArgs = {
-  item: NavItem;
-  warehouseId?: string;
-  role: RoleType;
-  data: BuildSidebarNavigationArgs["data"];
-};
-
-export function buildSidebarNavigation({
-  nav,
+export async function buildSidebar({
   warehouseId,
-  role,
-  data,
-}: BuildSidebarNavigationArgs): BuiltNavItem[] {
-  return nav
-    .map((item) =>
-      buildNavigationItem({
-        item,
-        warehouseId,
-        role,
-        data,
-      }),
-    )
-    .filter(Boolean) as BuiltNavItem[];
-}
+  pathname,
+}: {
+  warehouseId: string;
+  pathname: string;
+}): Promise<SidebarItem[]> {
+  const map = new Map<string, SidebarItem>();
+  const roots: SidebarItem[] = [];
 
-function buildNavigationItem({
-  item,
-  warehouseId,
-  role,
-  data,
-}: BuildNavigationItemArgs): BuiltNavItem | null {
-  /* ---------------- ROLE FILTER (UX ONLY) ---------------- */
-  if (item.allowedRoles && !item.allowedRoles.includes(role)) {
-    return null;
+  // 1️⃣ create nodes
+  for (const [key, policy] of Object.entries(policies)) {
+    const meta = policy.meta;
+    if (!meta?.sidebar) continue;
+
+    const allowed = await authorize(key as PolicyKey, {
+      warehouseId,
+      silent: true,
+    });
+    if (!allowed) continue;
+
+    const url = meta.route ? resolveRoute(meta.route, warehouseId) : undefined;
+
+    map.set(key, {
+      id: key,
+      title: meta.label,
+      icon: meta.icon,
+      url,
+      isActive: url ? isActivePath(pathname, url) : false,
+      children: [],
+    });
   }
 
-  /* ---------------- PERMISSION FILTER ---------------- */
-  if (item.permissions && item.permissions.length > 0) {
-    if (
-      !hasNavigationPermission(item.permissions, warehouseId, data.permissions)
-    ) {
-      return null;
+  // 2️⃣ link parent → child
+  for (const [key, policy] of Object.entries(policies)) {
+    const parentId = policy.meta?.parent;
+    if (!parentId) continue;
+
+    const child = map.get(key);
+    const parent = map.get(parentId);
+
+    if (child && parent) {
+      parent.children!.push(child);
     }
   }
 
-  /* ---------------- GROUP ITEM ---------------- */
-  if (item.children && "children" in item) {
-    const children = item.children
-      .map((child) =>
-        buildNavigationItem({
-          item: child,
-          warehouseId,
-          role,
-          data,
-        }),
-      )
-      .filter(Boolean) as BuiltNavItem[];
+  // 3️⃣ finalize roots & bubble active
+  for (const item of map.values()) {
+    if (item.children && item.children.length > 0) {
+      item.isActive = item.children.some((c) => c.isActive);
+      item.url = undefined; // parent no href
+    }
 
-    // hide empty groups
-    if (children.length === 0) return null;
+    const hasParent = Object.values(policies).some(
+      (p) => p.meta?.parent === item.id
+    );
 
-    return {
-      id: item.id,
-      title: item.title,
-      url: buildUrl(item.url, warehouseId),
-      icon: item.icon,
-      isActive: false,
-      children,
-    };
+    if (!hasParent) roots.push(item);
   }
 
-  /* ---------------- LEAF ITEM ---------------- */
-
-  return {
-    id: item.id,
-    title: item.title,
-    url: buildUrl(item.url, warehouseId),
-    icon: item.icon,
-    isActive: false,
-  };
+  return roots;
 }

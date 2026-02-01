@@ -1,5 +1,5 @@
-const Page = () => {
-  return <div>Select warehouse Page</div>;
-};
+function SelectWarehousePage() {
+  return <div>SelectWarehousePage</div>;
+}
 
-export default Page;
+export default SelectWarehousePage;

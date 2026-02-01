@@ -2,6 +2,7 @@
 
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Collapsible,
   CollapsibleContent,
@@ -18,13 +19,16 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { getIcon } from "@/lib/navigation/icon-map";
-import { BuiltNavItem } from "@/lib/navigation/navigation-types";
+import { isItemActive } from "@/lib/navigation/is-active";
+import type { SidebarItem } from "@/lib/navigation/sidebar.types";
 
 type Props = {
-  items: BuiltNavItem[];
+  items: SidebarItem[];
 };
 
 export const NavMain = ({ items }: Props) => {
+  const pathname = usePathname();
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
@@ -36,7 +40,8 @@ export const NavMain = ({ items }: Props) => {
             <Collapsible
               key={item.id}
               asChild
-              defaultOpen={item.isActive}
+              defaultOpen={isItemActive(item, pathname)}
+              // defaultOpen={item.isActive}
               className="group/collapsible"
             >
               <SidebarMenuItem>
@@ -53,7 +58,8 @@ export const NavMain = ({ items }: Props) => {
                       <SidebarMenuSubItem key={subItem.id}>
                         <SidebarMenuSubButton
                           asChild
-                          isActive={subItem.isActive}
+                          isActive={isItemActive(subItem, pathname)}
+                          // isActive={subItem.isActive}
                         >
                           <Link href={subItem.url as string}>
                             <span>{subItem.title}</span>
@@ -70,7 +76,8 @@ export const NavMain = ({ items }: Props) => {
               <SidebarMenuButton
                 asChild
                 tooltip={item.title}
-                isActive={item.isActive}
+                isActive={isItemActive(item, pathname)}
+                // isActive={item.isActive}
               >
                 <Link href={item.url as string}>
                   {Icon && <Icon />}

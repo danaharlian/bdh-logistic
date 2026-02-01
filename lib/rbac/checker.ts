@@ -1,8 +1,9 @@
 import {
   PermissionAction,
   PermissionModule,
+  RoleType,
 } from "@/lib/generated/prisma/enums";
-import { PermissionMap, PermissionKey } from "@/lib/rbac/types";
+import { PermissionMap } from "@/lib/rbac/types";
 import { createPermissionKey } from "@/lib/rbac/utils";
 
 /**
@@ -17,7 +18,7 @@ export function can(
   permissions: PermissionMap,
   warehouseId: string,
   module: PermissionModule,
-  action: PermissionAction,
+  action: PermissionAction
 ): boolean {
   const key = createPermissionKey(module, action);
   return !!permissions[warehouseId]?.[key];
@@ -33,10 +34,10 @@ export function can(
 export function canAny(
   permissions: PermissionMap,
   warehouseId: string,
-  checks: Array<{ module: PermissionModule; action: PermissionAction }>,
+  checks: Array<{ module: PermissionModule; action: PermissionAction }>
 ): boolean {
   return checks.some(({ module, action }) =>
-    can(permissions, warehouseId, module, action),
+    can(permissions, warehouseId, module, action)
   );
 }
 
@@ -50,46 +51,9 @@ export function canAny(
 export function canAll(
   permissions: PermissionMap,
   warehouseId: string,
-  checks: Array<{ module: PermissionModule; action: PermissionAction }>,
+  checks: Array<{ module: PermissionModule; action: PermissionAction }>
 ): boolean {
   return checks.every(({ module, action }) =>
-    can(permissions, warehouseId, module, action),
-  );
-}
-
-/**
- * Checks if a user has a specific role in a warehouse
- */
-export function hasRoleInWarehouse(
-  roles: Record<string, import("@/lib/generated/prisma/enums").RoleType>,
-  warehouseId: string,
-  role: import("@/lib/generated/prisma/enums").RoleType,
-): boolean {
-  if (!roles) return false;
-  return roles[warehouseId] === role;
-}
-
-/**
- * Checks if user has navigation permission(s)
- * Permission rule:
- * - If warehouseId exists → check that warehouse
- * - If global nav → check ANY warehouse
- */
-export function hasNavigationPermission(
-  required: PermissionKey[],
-  warehouseId: string | undefined,
-  permissions: PermissionMap,
-): boolean {
-  // warehouse-scoped
-  if (warehouseId) {
-    const perms = permissions[warehouseId];
-    if (!perms) return false;
-
-    return required.some((p) => perms[p]);
-  }
-
-  // global nav → any warehouse
-  return Object.values(permissions).some((perms) =>
-    required.some((p) => perms?.[p]),
+    can(permissions, warehouseId, module, action)
   );
 }

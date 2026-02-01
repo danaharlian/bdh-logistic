@@ -24,13 +24,7 @@ export type {
 export { permissionService } from "@/lib/rbac/service";
 
 // Checkers
-export {
-  can,
-  canAny,
-  canAll,
-  hasNavigationPermission,
-  hasRoleInWarehouse,
-} from "@/lib/rbac/checker";
+export { can, canAny, canAll } from "@/lib/rbac/checker";
 
 // Queries
 export { permissionQueries } from "@/lib/rbac/queries";

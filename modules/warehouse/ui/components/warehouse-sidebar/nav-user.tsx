@@ -20,8 +20,8 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { UserSessionServer } from "@/lib/auth";
 import { signOut } from "@/lib/auth-client";
+import type { UserSessionServer } from "@/lib/auth";
 
 type Props = {
   user: UserSessionServer;

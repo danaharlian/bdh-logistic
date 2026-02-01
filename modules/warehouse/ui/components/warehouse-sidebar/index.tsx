@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { usePathname } from "next/navigation";
 import { Hospital } from "lucide-react";
 import { NavMain } from "@/modules/warehouse/ui/components/warehouse-sidebar/nav-main";
 import { NavUser } from "@/modules/warehouse/ui/components/warehouse-sidebar/nav-user";
@@ -15,22 +14,14 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { UserSessionServer } from "@/lib/auth";
-import { markActiveSidebarItems } from "@/lib/navigation/adapter-sidebar";
-import { BuiltNavItem } from "@/lib/navigation/navigation-types";
+import type { SidebarItem } from "@/lib/navigation/sidebar.types";
 
 type Props = {
   user: UserSessionServer;
-  navigation: BuiltNavItem[];
+  items: SidebarItem[];
 } & React.ComponentProps<typeof Sidebar>;
 
-export const WarehouseSidebar = ({ user, navigation, ...props }: Props) => {
-  const pathname = usePathname();
-
-  const sidebarItems = markActiveSidebarItems({
-    items: navigation,
-    pathname,
-  });
-
+export const WarehouseSidebar = ({ user, items, ...props }: Props) => {
   return (
     <Sidebar variant="inset" {...props} collapsible="icon">
       <SidebarHeader>
@@ -53,7 +44,7 @@ export const WarehouseSidebar = ({ user, navigation, ...props }: Props) => {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={sidebarItems} />
+        <NavMain items={items} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} />
